@@ -1,22 +1,57 @@
 import React, { useEffect } from "react";
 import { View, StyleSheet } from "react-native";
 import SectionInput from "./src/components/SectionInput";
-import { configureBackgroundFetch, checkTimetable } from "./src/backgroundTask";
 import { initializeNotifications } from "./src/utils/notification";
 import { Button } from "react-native-paper";
+import Toast from "react-native-toast-message";
 
 export default function App() {
+  const [section, setSection] = React.useState("");
+  const apiUrl = "http://10.0.2.2:8000/api";
+
   useEffect(() => {
-    // initializeNotifications(); // Initialize notifications on app start
-    configureBackgroundFetch(); // Configure background fetch on app start
+    // initializeNotifications();
   }, []);
 
   const handleManualCheck = async () => {
-    await checkTimetable(); // Call the checkTimetable function manually
+    try {
+      const response = await fetch(`${apiUrl}/check-timetable/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          section: section,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        Toast.show({
+          type: "success",
+          text1: "Timetable Check",
+          text2: result.message,
+        });
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: result.message || "Failed to update timetable.",
+        });
+      }
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Network Error",
+        text2: "Unable to reach the server.",
+      });
+    }
   };
 
-  const handleSectionSaved = (section) => {
-    console.log("Section saved:", section);
+  const handleSectionSaved = (savedSection) => {
+    setSection(savedSection);
+    console.log("Section saved:", savedSection);
   };
 
   return (
@@ -32,6 +67,8 @@ export default function App() {
       >
         Check Timetable Now
       </Button>
+
+      <Toast />
     </View>
   );
 }
